@@ -6,7 +6,7 @@ authors = ["Andrej G."]
 license = "MIT"
 description = "A library which hides and retrieves text secrets within images."
 readme = "README.md"
-homepage = ""
+homepage = "https://github.com/Kaesebrot84/hips-lib"
 keywords = ["image", "steganography", "cryptography", "encoding"]
 categories = ["steganography", "cryptography", "encoding"]
 
