@@ -1,0 +1,17 @@
+[package]
+name = "hips-lib"
+version = "0.1.0"
+edition = "2021"
+authors = ["Andrej G."]
+license = "MIT"
+description = "A library which hides and retrieves text secrets within images."
+readme = "README.md"
+homepage = ""
+keywords = ["image", "steganography", "cryptography", "encoding"]
+categories = ["steganography", "cryptography", "encoding"]
+
+[dependencies]
+image = { version = "0.24.5", optional = true }
+
+[features]
+image = ["dep:image"]
