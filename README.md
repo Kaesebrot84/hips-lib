@@ -43,7 +43,7 @@ Include the `image` feature in your `Cargo.toml` reference.
 
 
 ```toml
-iris-lib = { version = "0.1.0", features = ["image"]}
+hips-lib = { version = "0.1.0", features = ["image"]}
 ```
 
 ```rust
