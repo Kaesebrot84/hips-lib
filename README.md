@@ -1,7 +1,8 @@
 # hips-lib
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaesebrot84/hips-lib/build.yml?style=flat-square)
-![Crates.io](https://img.shields.io/crates/v/hips-lib?style=flat-square)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Kaesebrot84/hips-lib/build.yml?style=flat-square)](https://github.com/Kaesebrot84/hips-lib/actions/workflows/build.yml)
+[![Crates.io](https://img.shields.io/crates/v/hips-lib?style=flat-square)](https://crates.io/crates/hips-lib)
+
 
 Performs text to image steganography by hinding and retrieving secret text within images or pixel arrays. This is achieved by encoding the secret in the least significant bits of the R, G, B values within the image.
 
