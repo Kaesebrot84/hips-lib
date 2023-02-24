@@ -288,6 +288,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg(feature = "image")]
     fn encode_decode_secret_img_ut() {
         let mut image = image::open("test_images/peppers.png").unwrap();
 
@@ -319,6 +320,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg(feature = "image")]
     fn hide_secret_img_ut() {
         // Trying to hide a secret in a non non existent image returns error
         let secret = String::from("Lorem Ipsum");
@@ -339,6 +341,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg(feature = "image")]
     fn find_secret_img_ut() {
         // Image with no secret returning Error
         let result = find_secret_img("test_images/non_existent_image.png");
