@@ -1,5 +1,5 @@
-pub fn encrypt_text(secret: &str, password: &str) -> String {
-    if password.is_empty() {
+pub fn otp(secret: &str, password: &str) -> String {
+    if password.is_empty() || secret.is_empty() {
         return secret.to_string();
     }
 
@@ -18,21 +18,38 @@ pub mod tests {
     use super::*;
 
     #[test]
-    fn encrypt_text_ut() {
+    fn otp_ut() {
+        // Empty secret returns empty result
+        let result = otp("", "");
+        assert!(result.is_empty());
+
         // Empty password returns secret in plain text
         let secret = "Secret";
         let password = "";
 
-        let result = encrypt_text(secret, password);
+        let result = otp(secret, password);
         assert_eq!(result, secret);
         assert_eq!(result.len(), secret.len());
 
         // Encryption with minimal password length
-        let secret = "Secret";
         let password = "a";
 
-        let result = encrypt_text(secret, password);
+        let result = otp(secret, password);
         assert_ne!(result, secret);
         assert_eq!(result.len(), secret.len());
+
+        // Reverse way decrypt secret to plain text
+        let result = otp(&result, password);
+        assert_eq!(result, secret);
+
+        // Encrypt with password longer than the secret
+        let password = "Lorem Ipsum is the best ipsum.";
+        let result = otp(secret, password);
+        assert_ne!(secret, result);
+        assert_eq!(secret.len(), result.len());
+
+        // Decrypt with password longer than the secret
+        let result = otp(&result, password);
+        assert_eq!(result, secret);
     }
 }
