@@ -20,6 +20,7 @@ Hide a secret in a vector of pixels:
 ```rust
 use hips_lib::{ color::Color, hips::{hide_secret_col, find_secret_col}};
 
+// TODO: Update with password
 fn main() {
     // Create a vector of four hundred pixels.
     let mut pixels = vec![Color::new(); 400];
@@ -48,6 +49,7 @@ hips-lib = { version = "0.1.0", features = ["image"]}
 ```
 
 ```rust
+// TODO: Update with password
 use hips_lib::hips::{find_secret_img, hide_secret_img};
 
 fn main() {

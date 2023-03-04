@@ -1,3 +1,11 @@
+/// One-time pad encryption of a string with a provided password string.
+/// Can be used for both encryption and decryption.
+/// 
+/// # Arguments
+/// 
+/// * `secret` - The secret string
+/// * `password` - The password string
+/// 
 pub fn otp(secret: &str, password: &str) -> String {
     if password.is_empty() || secret.is_empty() {
         return secret.to_string();
