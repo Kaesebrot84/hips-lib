@@ -1,4 +1,4 @@
-use crate::bit_ops::{BitOps, BitBuffer};
+use crate::bit_ops::{BitBuffer, BitOps};
 use crate::color::Color;
 use crate::otp::otp;
 
@@ -41,12 +41,14 @@ fn encode_secret_img(img: &mut DynamicImage, secret: &String, password: Option<S
     }
 
     if (img.pixels().count()) < secret.len() * 3 {
-        return Err(String::from("The message is too long to be hidden in this picture. Try using a shorter message or a larger input image."));
+        return Err(String::from(
+            "The message is too long to be hidden in this picture. Try using a shorter message or a larger input image.",
+        ));
     }
 
     let secret_bytes = match password {
         Some(pwd) => otp(secret, &pwd).into_bytes(),
-        None => secret.to_owned().into_bytes()
+        None => secret.to_owned().into_bytes(),
     };
 
     for (byte_idx, byte) in secret_bytes.iter().enumerate() {
@@ -77,11 +79,7 @@ fn encode_secret_img(img: &mut DynamicImage, secret: &String, password: Option<S
             };
 
             // Write pixel back to image
-            img.put_pixel(
-                row_idx,
-                col_idx,
-                image::Rgba([r_out, g_out, b_out, o_pixel[3]]),
-            );
+            img.put_pixel(row_idx, col_idx, image::Rgba([r_out, g_out, b_out, o_pixel[3]]));
         }
     }
 
@@ -101,12 +99,14 @@ pub fn hide_secret_col(pixels: &mut Vec<Color>, secret: &String, password: Optio
     }
 
     if pixels.len() < secret.len() * 3 {
-        return Err(String::from("The message is too long to be hidden in the given pixel vector. Try using a shorter secret or a larger pixel vector."));
+        return Err(String::from(
+            "The message is too long to be hidden in the given pixel vector. Try using a shorter secret or a larger pixel vector.",
+        ));
     }
 
     let secret_bytes = match password {
         Some(pwd) => otp(secret, &pwd).to_owned().into_bytes(),
-        None => secret.to_owned().into_bytes()
+        None => secret.to_owned().into_bytes(),
     };
 
     for (byte_idx, byte) in secret_bytes.iter().enumerate() {
@@ -189,7 +189,7 @@ pub fn find_secret_col(pixels: &Vec<Color>, password: Option<String>) -> Option<
 
     match password {
         Some(pwd) => result = otp(&result, &pwd),
-        None => ()
+        None => (),
     }
 
     Some(result)
@@ -259,12 +259,11 @@ fn decode_secret_img(img: &DynamicImage, password: Option<String>) -> Option<Str
     if result.is_empty() || result == "\0" {
         return None;
     }
-    
+
     match password {
         Some(pwd) => result = otp(&result, &pwd),
-        None => ()
+        None => (),
     }
-
 
     Some(result)
 }
@@ -368,7 +367,7 @@ pub mod tests {
 
         // No correct password provided fails returning secret
         let faulty = decode_secret_img(&result.unwrap(), None);
-        assert!(faulty.is_some());        
+        assert!(faulty.is_some());
         assert_ne!(faulty.unwrap(), secret);
 
         // Providing password will encrypt secret
