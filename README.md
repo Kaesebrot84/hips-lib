@@ -64,3 +64,5 @@ fn main() {
     assert!(result.is_some());
 }
 ```
+
+// TODO: Create and test an image with a secret and a password

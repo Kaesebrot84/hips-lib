@@ -303,7 +303,21 @@ pub mod tests {
         let mut pixels = vec![Color::new(); 30];
         assert!(hide_secret_col(&mut pixels, &String::from(""), None).is_err());
 
-        // TODO: Test with password
+        // Providing password will encrypt decrypt
+        let mut pixels = vec![Color::new(); 30];
+        let password = String::from("Ipsum Lorem");
+        let result = hide_secret_col(&mut pixels, &secret, Some(password.to_owned()));
+        assert!(result.is_ok());
+
+        // Decoding with wrong password does not return secret
+        let wrong_secret = find_secret_col(&pixels, Some(String::from("Wrong password")));
+        assert!(wrong_secret.is_some());
+        assert_ne!(wrong_secret.unwrap(), secret);
+
+        // Decoding with correct password returns correct secret
+        let correct_secret = find_secret_col(&pixels, Some(password));
+        assert!(correct_secret.is_some());
+        assert_eq!(correct_secret.unwrap(), secret);
     }
 
     #[test]
