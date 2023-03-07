@@ -351,7 +351,23 @@ pub mod tests {
         let mut image = image::open("test_images/rgb.jpg").unwrap();
         assert!(encode_secret_img(&mut image, &String::from(""), None).is_err());
 
-        // TODO: Test with password
+        // Test with password
+        let mut image = image::open("test_images/peppers.png").unwrap();
+        let password = String::from("Lorem Ipsum");
+        let result = encode_secret_img(&mut image, &secret, Some(password.to_owned()));
+        assert!(result.is_ok());
+
+        // No correct password provided fails to return correct secret
+        let faulty = decode_secret_img(&image, None);
+        assert!(faulty.is_some());
+        assert_ne!(faulty.unwrap(), secret);
+        let faulty = decode_secret_img(&image, Some(String::from("Wrong password")));
+        assert!(faulty.is_some());
+        assert_ne!(faulty.unwrap(), secret);
+
+        let correct = decode_secret_img(&image, Some(password));
+        assert!(correct.is_some());
+        assert_eq!(correct.unwrap(), secret);
     }
 
     #[test]
@@ -376,11 +392,16 @@ pub mod tests {
 
         // Providing password will encrypt secret
         let password = String::from("Ipsum Lorem");
-        let result = hide_secret_img("test_images/peppers.png", &secret, Some(password));
+        let result = hide_secret_img("test_images/peppers.png", &secret, Some(password.to_owned()));
         assert!(result.is_ok());
 
         // No correct password provided fails returning secret
         let faulty = decode_secret_img(&result.unwrap(), None);
+        assert!(faulty.is_some());
+        assert_ne!(faulty.unwrap(), secret);
+
+        let result = hide_secret_img("test_images/peppers.png", &secret, Some(password));
+        let faulty = decode_secret_img(&result.unwrap(), Some(String::from("Wrong password")));
         assert!(faulty.is_some());
         assert_ne!(faulty.unwrap(), secret);
 
