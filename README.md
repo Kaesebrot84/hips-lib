@@ -67,5 +67,4 @@ fn main() {
 
 ## TODO:
 
-* Create and test an image with a secret and a password
 * Add examples
