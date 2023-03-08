@@ -1,11 +1,11 @@
 /// One-time pad encryption of a string with a provided password string.
 /// Can be used for both encryption and decryption.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `secret` - The secret string
 /// * `password` - The password string
-/// 
+///
 pub fn otp(secret: &str, password: &str) -> String {
     if password.is_empty() || secret.is_empty() {
         return secret.to_string();
@@ -14,7 +14,7 @@ pub fn otp(secret: &str, password: &str) -> String {
     let mut result: String = String::new();
     for (idx, sec_byte) in secret.bytes().enumerate() {
         let pw_idx = idx % password.len();
-        let c = (sec_byte ^ password.bytes().nth(pw_idx).unwrap()) as char;
+        let c = (sec_byte ^ password.as_bytes().get(pw_idx).unwrap()) as char;
         result.push(c);
     }
 

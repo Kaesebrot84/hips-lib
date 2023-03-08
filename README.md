@@ -68,3 +68,4 @@ fn main() {
 ## TODO:
 
 * Add examples
+* image example does nothing atm, add some output?

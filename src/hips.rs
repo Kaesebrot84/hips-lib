@@ -105,7 +105,7 @@ pub fn hide_secret_col(pixels: &mut Vec<Color>, secret: &String, password: Optio
     }
 
     let secret_bytes = match password {
-        Some(pwd) => otp(secret, &pwd).to_owned().into_bytes(),
+        Some(pwd) => otp(secret, &pwd).into_bytes(),
         None => secret.to_owned().into_bytes(),
     };
 
@@ -187,9 +187,8 @@ pub fn find_secret_col(pixels: &Vec<Color>, password: Option<String>) -> Option<
         return None;
     }
 
-    match password {
-        Some(pwd) => result = otp(&result, &pwd),
-        None => (),
+    if let Some(pwd) = password {
+        result = otp(&result, &pwd)
     }
 
     Some(result)
