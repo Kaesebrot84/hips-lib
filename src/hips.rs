@@ -430,6 +430,26 @@ pub mod tests {
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
 
-        // TODO: Test with password
+        // Test with password
+        let expected = String::from("Lorem ipsum");
+        let password = String::from("password");
+
+        // No password provided return wrong secret
+        let result = find_secret_img("test_images/image_with_secret_password.png", None);
+        assert!(result.is_ok());
+        assert!(result.to_owned().unwrap().is_some());
+        assert_ne!(result.unwrap().unwrap(), expected);
+
+        // Wrong password provided returns wrong secret
+        let result = find_secret_img("test_images/image_with_secret_password.png", Some(String::from("Wrong password")));
+        assert!(result.is_ok());
+        assert!(result.to_owned().unwrap().is_some());
+        assert_ne!(result.unwrap().unwrap(), expected);
+
+        // Correct password provided returns correct secret
+        let result = find_secret_img("test_images/image_with_secret_password.png", Some(password));
+        assert!(result.is_ok());
+        assert!(result.to_owned().unwrap().is_some());
+        assert_eq!(result.unwrap().unwrap(), expected);
     }
 }
