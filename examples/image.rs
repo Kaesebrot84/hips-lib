@@ -12,6 +12,7 @@ fn main() {
     // Find secret in another image
     let password = String::from("password");
     let result = find_secret_img("test_images/image_with_secret_password.png", Some(password)).unwrap();
+
     assert!(result.is_some());
     assert_eq!(secret, result.unwrap());
 }
