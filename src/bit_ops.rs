@@ -91,10 +91,10 @@ mod tests {
 
     #[test]
     fn get_lsb_ut() {
-        assert_eq!(true, 1.get_lsb());
-        assert_eq!(false, 0.get_lsb());
-        assert_eq!(true, 11.get_lsb());
-        assert_eq!(false, 22.get_lsb());
+        assert!(1.get_lsb());
+        assert!(!0.get_lsb());
+        assert!(11.get_lsb());
+        assert!(!22.get_lsb());
     }
 
     #[test]
@@ -120,14 +120,14 @@ mod tests {
 
     #[test]
     fn get_bit_ut() {
-        assert_eq!(true, 0b0000_0001.get_bit(0));
-        assert_eq!(true, 0b0000_0010.get_bit(1));
-        assert_eq!(true, 0b0000_0100.get_bit(2));
-        assert_eq!(true, 0b0000_1000.get_bit(3));
-        assert_eq!(true, 0b0001_0000.get_bit(4));
-        assert_eq!(true, 0b0010_0000.get_bit(5));
-        assert_eq!(true, 0b0100_0000.get_bit(6));
-        assert_eq!(true, 0b1000_0000.get_bit(7));
+        assert!(0b0000_0001.get_bit(0));
+        assert!(0b0000_0010.get_bit(1));
+        assert!(0b0000_0100.get_bit(2));
+        assert!(0b0000_1000.get_bit(3));
+        assert!(0b0001_0000.get_bit(4));
+        assert!(0b0010_0000.get_bit(5));
+        assert!(0b0100_0000.get_bit(6));
+        assert!(0b1000_0000.get_bit(7));
     }
 
     #[test]
