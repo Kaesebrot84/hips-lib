@@ -18,23 +18,21 @@ hips-lib = "0.1.0"
 Hide a secret in a vector of pixels:
 
 ```rust
-use hips_lib::{ color::Color, hips::{hide_secret_col, find_secret_col}};
+use hips_lib::{color::Color, hips::{hide_secret_col, find_secret_col}};
 
 fn main() {
     // Create a vector of four hundred pixels.
     let mut pixels = vec![Color::new(); 400];
+    let password = String::from("password");
 
     // Your secret text
     let secret = String::from("Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.");
 
     // Hide the secret in the pixel vector.
-    hide_secret_col(&mut pixels, &secret).unwrap();
+    hide_secret_col(&mut pixels, &secret, Some(password.to_owned())).unwrap();
 
     // Try to read the secret back from the pixel vector.
-    let result = find_secret_col(&pixels);
-
-    // Test the results
-    assert_eq!(Some(secret), result);
+    let result = find_secret_col(&pixels, Some(password));
 }
 ```
 
@@ -51,14 +49,14 @@ hips-lib = { version = "0.1.0", features = ["image"]}
 use hips_lib::hips::{find_secret_img, hide_secret_img};
 
 fn main() {
-    let secret = String::from("Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.");
+    let secret = String::from("Lorem ipsum");
+    let password = String::from("password");
 
     // Hide secret in target image
-    let result_img = hide_secret_img("test_images/peppers.png", &secret);
-    assert!(result_img.is_ok());
+    let result_img = hide_secret_img("test_images/peppers.png", &secret, Some(password));
 
     // Find secret in another image
-    let result = find_secret_img("test_images/image_with_secret.png").unwrap();
-    assert!(result.is_some());
+    let password = String::from("password");
+    let result = find_secret_img("test_images/image_with_secret_password.png", Some(password)).unwrap();
 }
 ```

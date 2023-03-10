@@ -1,5 +1,6 @@
 use crate::bit_ops::{BitBuffer, BitOps};
 use crate::color::Color;
+use crate::otp::otp;
 
 #[cfg(feature = "image")]
 use image::GenericImage;
@@ -14,9 +15,9 @@ use image::{DynamicImage, GenericImageView};
 /// * `img_path` - Path to the target image file.
 /// * `secret` - Secret text which will be hidden in the image.
 ///
-pub fn hide_secret_img(img_path: &str, secret: &String) -> Result<DynamicImage, String> {
+pub fn hide_secret_img(img_path: &str, secret: &String, password: Option<String>) -> Result<DynamicImage, String> {
     if let Ok(mut img) = image::open(img_path) {
-        match encode_secret_img(&mut img, secret) {
+        match encode_secret_img(&mut img, secret, password) {
             Ok(()) => Ok(img),
             Err(err) => Err(err),
         }
@@ -34,16 +35,21 @@ pub fn hide_secret_img(img_path: &str, secret: &String) -> Result<DynamicImage, 
 /// * `img` - Target source image the secret will be written to.
 /// * `secret`  - Secret string which will be hidden in the target image.
 ///
-fn encode_secret_img(img: &mut DynamicImage, secret: &String) -> Result<(), String> {
+fn encode_secret_img(img: &mut DynamicImage, secret: &String, password: Option<String>) -> Result<(), String> {
     if secret.is_empty() {
         return Err(String::from("You have entered an empty secret. Try to use at least one character in the secret text."));
     }
 
     if (img.pixels().count()) < secret.len() * 3 {
-        return Err(String::from("The message is too long to be hidden in this picture. Try using a shorter message or a larger input image."));
+        return Err(String::from(
+            "The message is too long to be hidden in this picture. Try using a shorter message or a larger input image.",
+        ));
     }
 
-    let secret_bytes = secret.to_owned().into_bytes();
+    let secret_bytes = match password {
+        Some(pwd) => otp(secret, &pwd).into_bytes(),
+        None => secret.to_owned().into_bytes(),
+    };
 
     for (byte_idx, byte) in secret_bytes.iter().enumerate() {
         // Index of the first (of three) Pixel
@@ -73,11 +79,7 @@ fn encode_secret_img(img: &mut DynamicImage, secret: &String) -> Result<(), Stri
             };
 
             // Write pixel back to image
-            img.put_pixel(
-                row_idx,
-                col_idx,
-                image::Rgba([r_out, g_out, b_out, o_pixel[3]]),
-            );
+            img.put_pixel(row_idx, col_idx, image::Rgba([r_out, g_out, b_out, o_pixel[3]]));
         }
     }
 
@@ -91,16 +93,21 @@ fn encode_secret_img(img: &mut DynamicImage, secret: &String) -> Result<(), Stri
 /// * `pixels` - Vector of pixels the secret will be hidden in.
 /// * `secret` - The secret string.
 ///
-pub fn hide_secret_col(pixels: &mut Vec<Color>, secret: &String) -> Result<(), String> {
+pub fn hide_secret_col(pixels: &mut Vec<Color>, secret: &String, password: Option<String>) -> Result<(), String> {
     if secret.is_empty() {
         return Err(String::from("You have entered an empty secret. Try to use at least one character in the secret text."));
     }
 
     if pixels.len() < secret.len() * 3 {
-        return Err(String::from("The message is too long to be hidden in the given pixel vector. Try using a shorter secret or a larger pixel vector."));
+        return Err(String::from(
+            "The message is too long to be hidden in the given pixel vector. Try using a shorter secret or a larger pixel vector.",
+        ));
     }
 
-    let secret_bytes = secret.to_owned().into_bytes();
+    let secret_bytes = match password {
+        Some(pwd) => otp(secret, &pwd).into_bytes(),
+        None => secret.to_owned().into_bytes(),
+    };
 
     for (byte_idx, byte) in secret_bytes.iter().enumerate() {
         // Index of the first (of three) Pixel
@@ -140,7 +147,7 @@ pub fn hide_secret_col(pixels: &mut Vec<Color>, secret: &String) -> Result<(), S
 ///
 /// * `pixels` - Vector of pixels which will be searched for a secret string.
 ///
-pub fn find_secret_col(pixels: &Vec<Color>) -> Option<String> {
+pub fn find_secret_col(pixels: &Vec<Color>, password: Option<String>) -> Option<String> {
     if pixels.len() < 3 {
         return None;
     }
@@ -180,6 +187,10 @@ pub fn find_secret_col(pixels: &Vec<Color>) -> Option<String> {
         return None;
     }
 
+    if let Some(pwd) = password {
+        result = otp(&result, &pwd)
+    }
+
     Some(result)
 }
 
@@ -190,9 +201,9 @@ pub fn find_secret_col(pixels: &Vec<Color>) -> Option<String> {
 ///
 /// * `img_path` - Path to the image which will be searched for hidden secrets.
 ///
-pub fn find_secret_img(img_path: &str) -> Result<Option<String>, String> {
+pub fn find_secret_img(img_path: &str, password: Option<String>) -> Result<Option<String>, String> {
     if let Ok(img) = image::open(img_path) {
-        Ok(decode_secret_img(&img))
+        Ok(decode_secret_img(&img, password))
     } else {
         let error = format!("Failed loading input image '{img_path}'");
         Err(error)
@@ -206,7 +217,7 @@ pub fn find_secret_img(img_path: &str) -> Result<Option<String>, String> {
 ///
 /// * `img` - Image from which a secret will be retrieved.
 ///
-fn decode_secret_img(img: &DynamicImage) -> Option<String> {
+fn decode_secret_img(img: &DynamicImage, password: Option<String>) -> Option<String> {
     if img.pixels().count() < 3 {
         return None;
     }
@@ -248,6 +259,11 @@ fn decode_secret_img(img: &DynamicImage) -> Option<String> {
         return None;
     }
 
+    match password {
+        Some(pwd) => result = otp(&result, &pwd),
+        None => (),
+    }
+
     Some(result)
 }
 
@@ -261,97 +277,179 @@ pub mod tests {
         let mut pixels = vec![Color::new(); 30];
 
         // Byte vector with no secret returning None
-        assert_eq!(None, find_secret_col(&pixels));
+        assert_eq!(None, find_secret_col(&pixels, None));
 
         // Successfully encode and decode a valid secret
         let secret = String::from("0123456789");
-        let result = hide_secret_col(&mut pixels, &secret);
+        let result = hide_secret_col(&mut pixels, &secret, None);
         assert!(result.is_ok());
-        assert_eq!(Some(secret.to_owned()), find_secret_col(&pixels));
+        assert_eq!(Some(secret.to_owned()), find_secret_col(&pixels, None));
 
         // Return Error/None for byte vectors which cannot hold any secrets.
         let mut pixels = vec![Color::new(); 1];
-        assert!(hide_secret_col(&mut pixels, &secret).is_err());
-        assert_eq!(None, find_secret_col(&pixels));
+        assert!(hide_secret_col(&mut pixels, &secret, None).is_err());
+        assert_eq!(None, find_secret_col(&pixels, None));
 
         let mut pixels = vec![Color::new(); 5];
         // Return Error when secret is too long for given byte vector
-        assert!(hide_secret_col(&mut pixels, &String::from("ab")).is_err());
+        assert!(hide_secret_col(&mut pixels, &String::from("ab"), None).is_err());
 
         // Successfully encode decode the minimum size image secret combination.
-        assert!(hide_secret_col(&mut pixels, &String::from("a")).is_ok());
-        assert_eq!(Some(String::from("a")), find_secret_col(&pixels));
+        assert!(hide_secret_col(&mut pixels, &String::from("a"), None).is_ok());
+        assert_eq!(Some(String::from("a")), find_secret_col(&pixels, None));
 
         // Providing an empty secret returns Error
         let mut pixels = vec![Color::new(); 30];
-        assert!(hide_secret_col(&mut pixels, &String::from("")).is_err());
+        assert!(hide_secret_col(&mut pixels, &String::from(""), None).is_err());
+
+        // Providing password will encrypt decrypt
+        let mut pixels = vec![Color::new(); 30];
+        let password = String::from("Ipsum Lorem");
+        let result = hide_secret_col(&mut pixels, &secret, Some(password.to_owned()));
+        assert!(result.is_ok());
+
+        // Decoding with wrong password does not return secret
+        let wrong_secret = find_secret_col(&pixels, Some(String::from("Wrong password")));
+        assert!(wrong_secret.is_some());
+        assert_ne!(wrong_secret.unwrap(), secret);
+
+        // Decoding with correct password returns correct secret
+        let correct_secret = find_secret_col(&pixels, Some(password));
+        assert!(correct_secret.is_some());
+        assert_eq!(correct_secret.unwrap(), secret);
     }
 
     #[test]
+    #[cfg(feature = "image")]
     fn encode_decode_secret_img_ut() {
         let mut image = image::open("test_images/peppers.png").unwrap();
 
         // Image with no secret returning None
-        assert_eq!(None, decode_secret_img(&image));
+        assert_eq!(None, decode_secret_img(&image, None));
 
         // Successfully encode and decode a valid secret
         let secret = String::from("0123456789");
-        let result = encode_secret_img(&mut image, &secret);
+        let result = encode_secret_img(&mut image, &secret, None);
         assert!(result.is_ok());
-        assert_eq!(Some(secret.to_owned()), decode_secret_img(&image));
+        assert_eq!(Some(secret.to_owned()), decode_secret_img(&image, None));
 
         // Return Error/None for images which cannot hold any secrets.
         let mut image = image::open("test_images/1x1.png").unwrap();
-        assert!(encode_secret_img(&mut image, &secret).is_err());
-        assert_eq!(None, decode_secret_img(&image));
+        assert!(encode_secret_img(&mut image, &secret, None).is_err());
+        assert_eq!(None, decode_secret_img(&image, None));
 
         let mut image = image::open("test_images/rgb.jpg").unwrap();
         // Return Error when secret is too long for given image
-        assert!(encode_secret_img(&mut image, &String::from("ab")).is_err());
+        assert!(encode_secret_img(&mut image, &String::from("ab"), None).is_err());
 
         // Successfully encode decode the minimum size image secret combination.
-        assert!(encode_secret_img(&mut image, &String::from("a")).is_ok());
-        assert_eq!(Some(String::from("a")), decode_secret_img(&image));
+        assert!(encode_secret_img(&mut image, &String::from("a"), None).is_ok());
+        assert_eq!(Some(String::from("a")), decode_secret_img(&image, None));
 
         // Providing an empty secret returns Error
         let mut image = image::open("test_images/rgb.jpg").unwrap();
-        assert!(encode_secret_img(&mut image, &String::from("")).is_err());
+        assert!(encode_secret_img(&mut image, &String::from(""), None).is_err());
+
+        // Test with password
+        let mut image = image::open("test_images/peppers.png").unwrap();
+        let password = String::from("Lorem Ipsum");
+        let result = encode_secret_img(&mut image, &secret, Some(password.to_owned()));
+        assert!(result.is_ok());
+
+        // No correct password provided fails to return correct secret
+        let faulty = decode_secret_img(&image, None);
+        assert!(faulty.is_some());
+        assert_ne!(faulty.unwrap(), secret);
+        let faulty = decode_secret_img(&image, Some(String::from("Wrong password")));
+        assert!(faulty.is_some());
+        assert_ne!(faulty.unwrap(), secret);
+
+        let correct = decode_secret_img(&image, Some(password));
+        assert!(correct.is_some());
+        assert_eq!(correct.unwrap(), secret);
     }
 
     #[test]
+    #[cfg(feature = "image")]
     fn hide_secret_img_ut() {
         // Trying to hide a secret in a non non existent image returns error
         let secret = String::from("Lorem Ipsum");
-        let result = hide_secret_img("test_images/non_existent_image", &secret);
+        let result = hide_secret_img("test_images/non_existent_image", &secret, None);
         assert!(result.is_err());
 
         // Successfully hide a secret in a valid image returns Ok
-        let result = hide_secret_img("test_images/peppers.png", &secret);
+        let result = hide_secret_img("test_images/peppers.png", &secret, None);
         assert!(result.is_ok());
 
         // Hiding a secret in an image which is too small, returns error
-        let result = hide_secret_img("test_images/rgb.jpg", &String::from("ab"));
+        let result = hide_secret_img("test_images/rgb.jpg", &String::from("ab"), None);
         assert!(result.is_err());
 
         // Providing an empty secret returns Error
-        let result = hide_secret_img("test_images/rgb.jpg", &String::from(""));
+        let result = hide_secret_img("test_images/rgb.jpg", &String::from(""), None);
         assert!(result.is_err());
+
+        // Providing password will encrypt secret
+        let password = String::from("Ipsum Lorem");
+        let result = hide_secret_img("test_images/peppers.png", &secret, Some(password.to_owned()));
+        assert!(result.is_ok());
+
+        // No correct password provided fails returning secret
+        let faulty = decode_secret_img(&result.unwrap(), None);
+        assert!(faulty.is_some());
+        assert_ne!(faulty.unwrap(), secret);
+
+        let result = hide_secret_img("test_images/peppers.png", &secret, Some(password));
+        let faulty = decode_secret_img(&result.unwrap(), Some(String::from("Wrong password")));
+        assert!(faulty.is_some());
+        assert_ne!(faulty.unwrap(), secret);
+
+        // Providing password will encrypt secret
+        let password = String::from("Ipsum Lorem");
+        let result = hide_secret_img("test_images/peppers.png", &secret, Some(password.to_owned()));
+        assert!(result.is_ok());
+        let correct = decode_secret_img(&result.unwrap(), Some(password));
+        assert!(correct.is_some());
+        assert_eq!(correct.unwrap(), secret);
     }
 
     #[test]
+    #[cfg(feature = "image")]
     fn find_secret_img_ut() {
         // Image with no secret returning Error
-        let result = find_secret_img("test_images/non_existent_image.png");
+        let result = find_secret_img("test_images/non_existent_image.png", None);
         assert!(result.is_err());
 
         // Successfully find a secret in an image
-        let result = find_secret_img("test_images/image_with_secret.png");
+        let result = find_secret_img("test_images/image_with_secret.png", None);
         assert!(result.is_ok());
         assert!(result.unwrap().is_some());
 
         // Try to search an image which is too small to hold secrets
-        let result = find_secret_img("test_images/1x1.png");
+        let result = find_secret_img("test_images/1x1.png", None);
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
+
+        // Test with password
+        let expected = String::from("Lorem ipsum");
+        let password = String::from("password");
+
+        // No password provided return wrong secret
+        let result = find_secret_img("test_images/image_with_secret_password.png", None);
+        assert!(result.is_ok());
+        assert!(result.to_owned().unwrap().is_some());
+        assert_ne!(result.unwrap().unwrap(), expected);
+
+        // Wrong password provided returns wrong secret
+        let result = find_secret_img("test_images/image_with_secret_password.png", Some(String::from("Wrong password")));
+        assert!(result.is_ok());
+        assert!(result.to_owned().unwrap().is_some());
+        assert_ne!(result.unwrap().unwrap(), expected);
+
+        // Correct password provided returns correct secret
+        let result = find_secret_img("test_images/image_with_secret_password.png", Some(password));
+        assert!(result.is_ok());
+        assert!(result.to_owned().unwrap().is_some());
+        assert_eq!(result.unwrap().unwrap(), expected);
     }
 }
