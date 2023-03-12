@@ -12,7 +12,7 @@ Performs text to image steganography by hinding and retrieving secret text withi
 Include `hips-lib` in your `Cargo.toml`:
 
 ```
-hips-lib = "0.1.0"
+hips-lib = "0.2.0"
 ```
 
 Hide a secret in a vector of pixels:
@@ -42,7 +42,7 @@ Include the `image` feature in your `Cargo.toml` reference.
 
 
 ```toml
-hips-lib = { version = "0.1.0", features = ["image"]}
+hips-lib = { version = "0.2.0", features = ["image"]}
 ```
 
 ```rust
